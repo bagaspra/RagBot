@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Info, Users, MessageSquare, TrendingUp, ExternalLink } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { Info, Users, MessageSquare, TrendingUp } from "lucide-react";
+import { useSession } from "next-auth/react";
 import StatCard from "@/components/admin/StatCard";
 import { ThemeSelector } from "@/components/admin/ThemeSelector";
 import {
@@ -20,16 +20,11 @@ const ROLE_STYLES: Record<string, string> = {
   viewer: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400",
 };
 
-
 function getAvatarColor(name: string): string {
   const colors = ["bg-blue-500","bg-violet-500","bg-emerald-500","bg-amber-500","bg-pink-500"];
   let hash = 0;
   for (const c of name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff;
   return colors[Math.abs(hash) % colors.length];
-}
-
-function getInitials(name: string): string {
-  return name.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 }
 
 interface UserStatsData {
@@ -40,7 +35,7 @@ interface UserStatsData {
 
 /** Admin Users page — shows real logged-in user + empty state. Stats from chat logs. */
 export default function UsersPage() {
-  const { user, isLoaded } = useUser();
+  const { data: session, status } = useSession();
   const [stats, setStats] = useState<UserStatsData>({ total_queries: 0, unique_users: 0, avg_queries_per_user: 0 });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
@@ -55,10 +50,12 @@ export default function UsersPage() {
     fetchStats();
   }, []);
 
-  const realName = user ? (user.fullName ?? user.firstName ?? "You") : "You";
-  const realEmail = user?.primaryEmailAddress?.emailAddress ?? "";
-  const realRole = (user?.publicMetadata?.role as string | undefined) ?? "admin";
-  const realInitials = realName.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "U";
+  const isLoaded = status !== "loading";
+  const user = session?.user;
+  const realName = user?.name ?? "Admin";
+  const realEmail = user?.email ?? "";
+  const realRole = (user as { role?: string } | undefined)?.role ?? "admin";
+  const realInitials = realName.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "A";
 
   return (
     <div className="max-w-5xl mx-auto py-2">
@@ -70,30 +67,13 @@ export default function UsersPage() {
             Activity overview for all chatbot users
           </p>
         </div>
-        <a
-          href="https://dashboard.clerk.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-medium"
-        >
-          Manage in Clerk
-          <ExternalLink className="size-3.5" />
-        </a>
       </div>
 
       {/* Info Banner */}
       <div className="flex items-start gap-3 p-4 mb-6 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl">
         <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
         <p className="text-sm text-blue-700 dark:text-blue-300">
-          Showing your account with real data. Full user management available in{" "}
-          <a
-            href="https://dashboard.clerk.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold underline hover:no-underline"
-          >
-            Clerk Dashboard →
-          </a>
+          Showing your account with real data. This admin panel uses credentials-based authentication.
         </p>
       </div>
 
@@ -124,7 +104,7 @@ export default function UsersPage() {
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">User Activity</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Real-time data from Clerk and chat logs
+            Real-time data from chat logs
           </p>
         </div>
         <Table>
@@ -143,14 +123,9 @@ export default function UsersPage() {
               <TableRow className="bg-blue-50/30 dark:bg-blue-900/10 transition-colors">
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {user.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={user.imageUrl} alt={realName} className="size-8 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className={`size-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${getAvatarColor(realName)}`}>
-                        {realInitials}
-                      </div>
-                    )}
+                    <div className={`size-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${getAvatarColor(realName)}`}>
+                      {realInitials}
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                         {realName}
@@ -184,16 +159,7 @@ export default function UsersPage() {
                 <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                   <p className="text-sm">No other users yet.</p>
                   <p className="text-xs mt-1">
-                    Invite users via the{" "}
-                    <a
-                      href="https://dashboard.clerk.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:no-underline"
-                    >
-                      Clerk Dashboard
-                    </a>
-                    .
+                    This panel supports a single admin account via environment variables.
                   </p>
                 </div>
               </td>

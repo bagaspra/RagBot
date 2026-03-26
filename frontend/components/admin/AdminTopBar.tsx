@@ -4,12 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Bell, ArrowLeft } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { useSession, signOut } from "next-auth/react";
 import Button from "@/components/ui/button";
 import { ThemeToggle } from "@/components/admin/ThemeToggle";
 
 export default function AdminTopBar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   // Generate breadcrumbs from pathname
   // e.g., /admin/documents -> Admin > Documents
@@ -17,7 +18,7 @@ export default function AdminTopBar() {
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
     const title = segment.charAt(0).toUpperCase() + segment.slice(1);
-    
+
     return (
       <React.Fragment key={segment}>
         <span className={isLast ? "text-slate-900 font-medium" : "text-slate-500"}>
@@ -57,7 +58,17 @@ export default function AdminTopBar() {
         <div className="h-8 w-px bg-slate-200 mx-1" />
 
         {/* User Button */}
-        <UserButton />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium">
+            {session?.user?.name?.[0]?.toUpperCase() ?? "A"}
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </header>
   );

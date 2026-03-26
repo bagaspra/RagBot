@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import React from "react";
-import { ClerkProvider } from "@clerk/nextjs";
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import React from "react"
+import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 
-import "./globals.css";
+import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "RAG Chatbot",
   description: "Internal Q&A",
-};
+}
 
 /**
  * Root application layout.
@@ -20,15 +20,14 @@ export const metadata: Metadata = {
  * suppressHydrationWarning is still required on <html> for next-themes.
  */
 export default function RootLayout(props: { children: React.ReactNode }) {
-  const { children } = props;
+  const { children } = props
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ClerkProvider>
+        <NextAuthSessionProvider>
           {children}
-        </ClerkProvider>
+        </NextAuthSessionProvider>
       </body>
     </html>
-  );
+  )
 }
-

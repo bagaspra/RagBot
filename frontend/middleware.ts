@@ -1,9 +1,22 @@
+import { auth } from "@/auth"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 
-export function middleware(_request: NextRequest) {
+export default auth((req) => {
+  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin")
+  const isSignInPage = req.nextUrl.pathname === "/sign-in"
+  const isAuthenticated = !!req.auth
+  const isAdmin = (req.auth?.user as { role?: string })?.role === "admin"
+
+  if (isAdminRoute && !isAuthenticated) {
+    return NextResponse.redirect(new URL("/sign-in", req.nextUrl))
+  }
+
+  if (isAdminRoute && isAuthenticated && !isAdmin) {
+    return NextResponse.redirect(new URL("/", req.nextUrl))
+  }
+
   return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: [
