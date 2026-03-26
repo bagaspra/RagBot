@@ -1,9 +1,12 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { authConfig } from "@/auth.config"
 
+/**
+ * NextAuth configuration.
+ * Runs on Node.js runtime only (server components,
+ * API routes). Never imported by middleware.ts.
+ */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -12,11 +15,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        /**
-         * Simple hardcoded admin check.
-         * In production, replace with database lookup.
-         * Credentials loaded from environment variables.
-         */
         const adminUser = process.env.ADMIN_USERNAME
         const adminPass = process.env.ADMIN_PASSWORD
 
@@ -26,7 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ) {
           return {
             id: "1",
-            name: "Admin",
+            name: process.env.ADMIN_EMAIL?.split("@")[0] ?? "Admin",
             email: process.env.ADMIN_EMAIL ?? "admin@company.com",
             role: "admin",
           }
@@ -35,4 +33,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as { role?: string }).role
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as { role?: string }).role = token.role as string
+      }
+      return session
+    },
+  },
+  pages: {
+    signIn: "/sign-in",
+  },
+  session: {
+    strategy: "jwt",
+  },
 })
