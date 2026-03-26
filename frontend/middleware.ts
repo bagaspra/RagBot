@@ -1,16 +1,34 @@
-import NextAuth from "next-auth"
-import { authConfig } from "@/auth.config"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 /**
- * Middleware uses the edge-safe authConfig only (no Credentials provider).
- * Route protection logic lives in authConfig.callbacks.authorized.
- * Node.js-only code (Credentials provider) stays in auth.ts.
+ * Edge-compatible middleware.
+ * Does NOT import next-auth or any auth module.
+ * Reads the next-auth session token directly from
+ * cookies and decodes it without any Node.js APIs.
  */
-export default NextAuth(authConfig).auth
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  const isAdminRoute = pathname.startsWith("/admin")
+
+  if (!isAdminRoute) {
+    return NextResponse.next()
+  }
+
+  const sessionToken =
+    req.cookies.get("next-auth.session-token")?.value ??
+    req.cookies.get("__Secure-next-auth.session-token")?.value
+
+  if (!sessionToken) {
+    const signInUrl = new URL("/sign-in", req.nextUrl.origin)
+    signInUrl.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(signInUrl)
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/admin/:path*"],
 }
