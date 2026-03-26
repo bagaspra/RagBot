@@ -1,0 +1,36 @@
+FROM python:3.11-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 1001 appuser
+WORKDIR /app
+USER appuser
+
+COPY requirements.backend.txt /app/requirements.backend.txt
+RUN pip install --user -r /app/requirements.backend.txt
+
+COPY --chown=appuser:appuser backend/ /app/backend/
+RUN python -m compileall /app/backend -q
+
+FROM python:3.11-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 1001 appuser
+
+WORKDIR /app
+
+COPY --from=builder /home/appuser/.local /home/appuser/.local
+COPY --from=builder /app/backend /app/backend
+
+ENV PATH="/home/appuser/.local/bin:${PATH}"
+
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
