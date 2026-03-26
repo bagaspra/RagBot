@@ -1,7 +1,9 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
+import { authConfig } from "@/auth.config"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -33,26 +35,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      /** Attach role to JWT token on sign in */
-      if (user) {
-        token.role = (user as { role?: string }).role
-      }
-      return token
-    },
-    async session({ session, token }) {
-      /** Expose role in session object */
-      if (session.user) {
-        (session.user as { role?: string }).role = token.role as string
-      }
-      return session
-    },
-  },
-  pages: {
-    signIn: "/sign-in",
-  },
-  session: {
-    strategy: "jwt",
-  },
 })

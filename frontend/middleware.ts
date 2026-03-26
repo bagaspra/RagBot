@@ -1,22 +1,12 @@
-import { auth } from "@/auth"
-import { NextResponse } from "next/server"
+import NextAuth from "next-auth"
+import { authConfig } from "@/auth.config"
 
-export default auth((req) => {
-  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin")
-  const isSignInPage = req.nextUrl.pathname === "/sign-in"
-  const isAuthenticated = !!req.auth
-  const isAdmin = (req.auth?.user as { role?: string })?.role === "admin"
-
-  if (isAdminRoute && !isAuthenticated) {
-    return NextResponse.redirect(new URL("/sign-in", req.nextUrl))
-  }
-
-  if (isAdminRoute && isAuthenticated && !isAdmin) {
-    return NextResponse.redirect(new URL("/", req.nextUrl))
-  }
-
-  return NextResponse.next()
-})
+/**
+ * Middleware uses the edge-safe authConfig only (no Credentials provider).
+ * Route protection logic lives in authConfig.callbacks.authorized.
+ * Node.js-only code (Credentials provider) stays in auth.ts.
+ */
+export default NextAuth(authConfig).auth
 
 export const config = {
   matcher: [
