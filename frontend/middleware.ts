@@ -1,11 +1,12 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { authMiddleware } from "@clerk/nextjs";
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isAdminRoute(req)) {
-    await auth().protect();
-  }
+/**
+ * Clerk v4 authMiddleware — Edge Runtime compatible.
+ * All routes are protected by default; publicRoutes are accessible without auth.
+ * Admin role check is enforced in app/admin/layout.tsx (server component).
+ */
+export default authMiddleware({
+  publicRoutes: ["/", "/sign-in(.*)", "/sign-up(.*)"],
 });
 
 export const config = {
