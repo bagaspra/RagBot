@@ -14,7 +14,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
  * because Clerk does not include publicMetadata in the JWT by default.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = await auth();
+  const { userId } = auth();
 
   // If not authenticated, redirect to sign-in
   if (!userId) {

@@ -6,7 +6,7 @@ export default function SignInPage() {
       <SignIn
         routing="path"
         path="/sign-in"
-        redirectUrl="/admin"
+        forceRedirectUrl="/admin"
         signUpUrl={undefined} 
       />
     </div>
